@@ -30,7 +30,8 @@ unset_repo_fields = {"url" : "", "ssh_url" : "", "size" : "", "homepage" : "", "
 					"mirror_url" : "", "html_url" : "", "master_branch" : "", "open_issues" : "",
 					"description" : "", "has_wiki" : "", "git_url": "", "svn_url" : "",
 					"pushed_at" : "", 'owner.gravatar_id': "", 'owner.avatar_url': "",
-					'owner.url': ""}
+					'owner.url': "", "organization.gravatar_id": "", "organization.avatar_url": "",
+					"organization.url": "", "parent": "", "source": ""}
 
 # Remove 'unset_repo_fields' from all the documents in 'repos' collection
 db.repos.update({}, {'$unset': unset_repo_fields}, multi = True)
@@ -58,3 +59,4 @@ RUN 'use github' and 'db.repairDatabase()' command from mongo shell
 to free the unused space in mongoDB.
 ###################################################################
 '''
+
