@@ -16,16 +16,15 @@ coll.users <- "github.users"
 
 mongo.is.connected(mongo)
 
-# Names of all the available fields in a document of repos collection
-all_repo_fields <- c("_id", "url", "fork", "private", "ssh_url", "owner", "created_at", "size",
-                     "homepage", "source", "clone_url", "id", "has_issues", "forks", "has_downloads",
-                     "organization", "full_name", "name", "watchers", "mirror_url", "html_url", 
-                     "master_branch", "open_issues", "language", "description", "updated_at", "has_wiki", 
-                     "git_url", "pushed_at", "parent", "svn_url")
+# Names of all the  available fields in a document of repos collection
+repo_fields <- c("_id", "url", "fork", "private", "ssh_url", "owner", "created_at", "size",
+                 "homepage", "source", "clone_url", "id", "has_issues", "forks", "has_downloads",
+                 "organization", "full_name", "name", "watchers", "mirror_url", "html_url", 
+                 "master_branch", "open_issues", "language", "description", "updated_at", "has_wiki", 
+                 "git_url", "pushed_at", "parent", "svn_url")
 
 # Useful Fields after trimming the repos collection from database
-trimmed_repo_fields <- sort(c("fork", "private", "owner", "created_at", "id", "forks",
-                         "organization", "full_name", "watchers", "language", "updated_at", "parent"))
+trimmed_repo_fields <- sort(c("_id", "fork", "private", "owner.id", "owner.login", "created_at", "id","forks", "organization.id", "organization.login", "full_name", "watchers", "language", "updated_at"))
 
 # Names of all the available fields in a document of users collection
 all_user_fields <- c("_id", "url", "avatar_url", "created_at", "login", "id", "followers", "gravatar_id",
@@ -33,27 +32,33 @@ all_user_fields <- c("_id", "url", "avatar_url", "created_at", "login", "id", "f
                      "location", "company", "blog", "hireable", "bio")
 
 # Useful Fields after trimming the users collection from database
-trimmed_user_fields <- sort(c("login", "id", "followers", "public_repos", "type", "following",
-                         "location", "company", "hireable"))
+trimmed_user_fields <- sort(c("_id", "login", "id", "followers", "public_repos", "type", "following",
+                              "location", "company", "hireable"))
 
 # Fetches data from mongo database
-get_mongo_res <- function(json, ns){
+get_mongo_res <- function(json, ns, trimmed_fields){
   
   # Get the bson object
   bson <- mongo.bson.from.JSON(json)
   
-  # Create an empty data frame to hold the contents of the collection
-  coll.df <- data.frame()
-  
   # Returned mongo cursor for repos collection
-  cursor <- mongo.find(mongo, ns, bson)
-  while(mongo.cursor.next(cursor)) {
-    value <- mongo.cursor.value(cursor)
-    list <- mongo.bson.to.list(value)  
+  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 5000L)
+  
+  # Imputes missing fields in documents
+  res_list <- lapply(res, function(x) {
     
-    tmp.df <- as.data.frame(t(unlist(list)))
-    coll.df <- rbind.fill(coll.df, tmp.df)
-  }
+    # Get any missing fields in this document and add a null value at thier positions
+    missing_fields <- !(trimmed_fields %in% names(unlist(x)))
+    fields_to_add <- trimmed_fields[missing_fields]
+    x[fields_to_add] <- NA
+    x <- x[sort(names(x))]
+    
+    # Finally return the unlisted(un-nested) list
+    unlist(x)    
+  })
+  
+  # Create a data frame from nested list
+  coll.df <- as.data.frame(do.call(rbind, res_list))
   
   str(coll.df)  
   return(coll.df)
@@ -63,10 +68,10 @@ get_mongo_res <- function(json, ns){
 json <- '{"language": "R"}'
 
 # Get mongo response from repos collection
-repos.df <- get_mongo_res(json, coll.repos)
+repos.df <- get_mongo_res(json, coll.repos, trimmed_repo_fields)
 
 # Query condition for users
 json <- '{"location": "California"}'
 
 # Get mongo response from users collection
-users.df <- get_mongo_res(json, coll.users)
+users.df <- get_mongo_res(json, coll.users, trimmed_user_fields)
