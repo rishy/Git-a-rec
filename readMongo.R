@@ -32,7 +32,7 @@ all_user_fields <- c("_id", "url", "avatar_url", "created_at", "login", "id", "f
                      "location", "company", "blog", "hireable", "bio")
 
 # Useful Fields after trimming the users collection from database
-trimmed_user_fields <- sort(c("_id", "login", "id", "followers", "public_repos", "type", "following",
+trimmed_user_fields <- sort(c("_id", "login", "id", "followers","type", "following",
                               "location", "company", "hireable"))
 
 # Fetches data from mongo database
@@ -65,7 +65,7 @@ get_mongo_res <- function(json, ns, trimmed_fields){
 }
 
 # query condition for repos
-json <- '{"language": "R"}'
+json <- '{}'
 
 # Get mongo response from repos collection
 repos.df <- get_mongo_res(json, coll.repos, trimmed_repo_fields)
@@ -75,3 +75,31 @@ json <- '{"location": "California"}'
 
 # Get mongo response from users collection
 users.df <- get_mongo_res(json, coll.users, trimmed_user_fields)
+
+
+
+
+## Visualisation 1 :- Yearwise Programming Language Popularity
+# Starts Here
+
+repos.df$year <- as.integer(format(as.Date(repos.df$created_at), "%Y"))
+
+
+d1 = group_by(repos.df, language)
+d2 = summarise(d1, val=n())
+d3 = na.omit(arrange(d2, desc(val)))
+d4 = as.character(d3[1:10,]$language)
+
+yearly <- group_by(repos.df, language, year)
+data1 <- na.omit(summarise(yearly, val = n()))
+data2 <- data1[data1$language %in% d4, ]
+
+library(ggplot2)
+
+# line chart plot
+ggplot(data = data2, aes(x=year, y=val)) + geom_line(aes(colour=language))
+
+## Ends here
+
+
+## Visualisation 2 :- Barchart for User Vs Company
