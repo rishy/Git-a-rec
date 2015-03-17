@@ -45,7 +45,7 @@ get_mongo_res <- function(json, ns, trimmed_fields){
   bson <- mongo.bson.from.JSON(json)
   
   # Returned mongo cursor for repos collection
-  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 50000L)
+  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 500L)
   
   # Imputes missing fields in documents
   res_list <- lapply(res, function(x) {
@@ -61,7 +61,7 @@ get_mongo_res <- function(json, ns, trimmed_fields){
   })
   
   # Create a data frame from nested list
-  coll.df <- as.data.frame(do.call(rbind, res_list))
+  coll.df <- as.data.frame(do.call(rbind, res_list), stringsAsFactors = FALSE)
   
   str(coll.df)  
   return(coll.df)
@@ -79,8 +79,21 @@ json <- '{}'
 # Get mongo response from users collection
 users.df <- get_mongo_res(json, coll.users, trimmed_user_fields)
 
+# Swap missing values of organization.login and organization.id in repos.df
+faulty_org_logins <- suppressWarnings(!is.na(as.integer(repos.df$organization.login)))
+repos <- repos.df[faulty_org_logins, c('organization.login', 'organization.id')]
+temp <- repos$organization.login
+repos$organization.login <- repos$organization.id
+repos$organization.id <- temp
+repos.df[faulty_org_logins, c('organization.login', 'organization.id')] <- repos[,  c('organization.login', 'organization.id')]
 
-
+# Swap missing values of owner.login and owner.id in repos.df
+faulty_owner_logins <- suppressWarnings(!is.na(as.integer(repos.df$owner.login)))
+repos <- repos.df[faulty_owner_logins, c('owner.login', 'owner.id')]
+temp <- repos$owner.login
+repos$owner.login <- repos$owner.id
+repos$owner.id <- temp
+repos.df[faulty_owner_logins, c('owner.login', 'owner.id')] <- repos[,  c('owner.login', 'owner.id')]
 
 ## Visualisation 1 :- Yearwise Programming Language Popularity
 ## Starts Here
