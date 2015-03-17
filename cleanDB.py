@@ -65,6 +65,11 @@ db.users.update({}, {'$unset': unset_user_fields}, multi = True)
 
 print db.users.find_one()
 
+# Remove duplicate documents from users and repos collections
+db.repos.ensure_index([('full_name', pymongo.ASCENDING), ('unique', True), ('dropDups', True)])
+
+db.users.ensure_index([('login', pymongo.ASCENDING), ('unique', True), ('dropDups', True)])
+
 '''
 ###################################################################
 RUN 'use github' and 'db.repairDatabase()' command from mongo shell
