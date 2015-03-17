@@ -4,8 +4,11 @@
 #install.packages('rmongodb')
 library(rmongodb)
 library(plyr)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
 
-# Create a mongod instance with default settings
+# Create a mongod instance with default settingsa
 mongo <- mongo.create()
 
 # Repos Collection in github db
@@ -42,7 +45,7 @@ get_mongo_res <- function(json, ns, trimmed_fields){
   bson <- mongo.bson.from.JSON(json)
   
   # Returned mongo cursor for repos collection
-  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 5000L)
+  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 50000L)
   
   # Imputes missing fields in documents
   res_list <- lapply(res, function(x) {
@@ -71,7 +74,7 @@ json <- '{}'
 repos.df <- get_mongo_res(json, coll.repos, trimmed_repo_fields)
 
 # Query condition for users
-json <- '{"location": "California"}'
+json <- '{}'
 
 # Get mongo response from users collection
 users.df <- get_mongo_res(json, coll.users, trimmed_user_fields)
@@ -80,7 +83,7 @@ users.df <- get_mongo_res(json, coll.users, trimmed_user_fields)
 
 
 ## Visualisation 1 :- Yearwise Programming Language Popularity
-# Starts Here
+## Starts Here
 
 repos.df$year <- as.integer(format(as.Date(repos.df$created_at), "%Y"))
 
@@ -94,8 +97,6 @@ yearly <- group_by(repos.df, language, year)
 data1 <- na.omit(summarise(yearly, val = n()))
 data2 <- data1[data1$language %in% d4, ]
 
-library(ggplot2)
-
 # line chart plot
 ggplot(data = data2, aes(x=year, y=val)) + geom_line(aes(colour=language))
 
@@ -103,3 +104,16 @@ ggplot(data = data2, aes(x=year, y=val)) + geom_line(aes(colour=language))
 
 
 ## Visualisation 2 :- Barchart for User Vs Company
+## Starts Here
+
+d1 <- group_by(users.df, company)
+d2 <- summarise(d1, users = n())
+d3 <- data.frame(arrange(d2, desc(users)))
+d3 = filter(d3, !(company %in% c("-", "None", "", "none")))
+top_companies <- as.character(d3[2:25,]$company)
+comp_to_plot <- users.df[users.df$company %in% top_companies, ]
+
+# barplot
+qplot(comp_to_plot$company, xlab="Companies", ylab="No. of Users", main="Users Count Per Company Graph")
+
+## Ends Here

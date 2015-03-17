@@ -58,7 +58,7 @@ user_fields = ["_id", "url", "avatar_url", "created_at", "login", "id", "followe
 			  "location", "company", "blog", "hireable", "bio"]
 
 # Fields to be removed from each untrimmed user document
-unset_user_fields = {"url" : "", "avatar_url" : "", "created_at" : "", "gravatar_id" : "","html_url" : "", "public_gists" : "", "email" : "", "name" : "","blog" : "", "bio" : "","starred_url": "", "repos_url" : "", "events_url": "","organizations_url": "", "followers_url": "", "received_events_url": "", "gists_url": "","following_url": "", "subscriptions_url": "","public_members_url":"","public_repos":"","members_url":""}
+unset_user_fields = {"url" : "", "avatar_url" : "", "created_at" : "", "gravatar_id" : "","html_url" : "", "public_gists" : "", "email" : "", "name" : "","blog" : "", "bio" : "","starred_url": "", "repos_url" : "", "events_url": "","organizations_url": "", "followers_url": "", "received_events_url": "", "gists_url": "","following_url": "", "subscriptions_url": "","public_members_url":"","public_repos":"","members_url":"","updated_at":"", "site_admin":""}
 
 # Remove 'unset_user_fields' from all the documents in 'users' collection
 db.users.update({}, {'$unset': unset_user_fields}, multi = True)
