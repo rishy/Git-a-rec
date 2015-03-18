@@ -6,7 +6,6 @@ library(rmongodb)
 library(plyr)
 library(dplyr)
 library(ggplot2)
-library(gridExtra)
 
 # Create a mongod instance with default settingsa
 mongo <- mongo.create()
@@ -17,53 +16,62 @@ coll.repos <- "github.repos"
 # Users Collection in github db
 coll.users <- "github.users"
 
+# Return TRUE if mongo connection is established
 mongo.is.connected(mongo)
 
-# Names of all the  available fields in a document of repos collection
-repo_fields <- c("_id", "url", "fork", "private", "ssh_url", "owner", "created_at", "size",
-                 "homepage", "source", "clone_url", "id", "has_issues", "forks", "has_downloads",
-                 "organization", "full_name", "name", "watchers", "mirror_url", "html_url", 
-                 "master_branch", "open_issues", "language", "description", "updated_at", "has_wiki", 
-                 "git_url", "pushed_at", "parent", "svn_url")
+# Names of all the available fields in a document of repos collection
+repo_fields <- c("_id", "url", "fork", "private", "ssh_url", "owner",
+                "created_at", "size","homepage", "source", "clone_url",
+                "id", "has_issues", "forks", "has_downloads","organization",
+                "full_name", "name", "watchers", "mirror_url", "html_url",
+                "master_branch", "open_issues", "language", "description",
+                "updated_at", "has_wiki", "git_url", "pushed_at", "parent",
+                "svn_url")
 
 # Useful Fields after trimming the repos collection from database
-trimmed_repo_fields <- sort(c("_id", "fork", "private", "owner.id", "owner.login", "created_at", "id","forks", "organization.id", "organization.login", "full_name", "watchers", "language", "updated_at"))
+trimmed_repo_fields <- sort(c("_id", "fork", "private", "owner.id",
+                            "owner.login", "created_at", "id","forks",
+                            "organization.id", "organization.login",
+                            "full_name", "watchers", "language",
+                            "updated_at"))
 
 # Names of all the available fields in a document of users collection
-all_user_fields <- c("_id", "url", "avatar_url", "created_at", "login", "id", "followers", "gravatar_id",
-                     "public_repos", "type", "html_url", "public_gists", "following", "email", "name",
-                     "location", "company", "blog", "hireable", "bio")
+all_user_fields <- c("_id", "url", "avatar_url", "created_at", "login",
+                    "id", "followers", "gravatar_id", "public_repos",
+                    "type", "html_url", "public_gists", "following",
+                    "email", "name", "location", "company", "blog",
+                    "hireable", "bio")
 
 # Useful Fields after trimming the users collection from database
-trimmed_user_fields <- sort(c("_id", "login", "id", "followers","type", "following",
-                              "location", "company", "hireable"))
+trimmed_user_fields <- sort(c("_id", "login", "id", "followers","type",
+                              "following","location", "company", "hireable"))
 
-# Fetches data from mongo database
+# A function to fetch data from mongodb database
 get_mongo_res <- function(json, ns, trimmed_fields){
-  
+
   # Get the bson object
   bson <- mongo.bson.from.JSON(json)
-  
+
   # Returned mongo cursor for repos collection
-  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 500L)
-  
+  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 1000L)
+
   # Imputes missing fields in documents
   res_list <- lapply(res, function(x) {
-    
+
     # Get any missing fields in this document and add a null value at thier positions
     missing_fields <- !(trimmed_fields %in% names(unlist(x)))
     fields_to_add <- trimmed_fields[missing_fields]
     x[fields_to_add] <- NA
     x <- x[sort(names(x))]
-    
+
     # Finally return the unlisted(un-nested) list
-    unlist(x)    
+    unlist(x)
   })
-  
+
   # Create a data frame from nested list
   coll.df <- as.data.frame(do.call(rbind, res_list), stringsAsFactors = FALSE)
-  
-  str(coll.df)  
+
+  str(coll.df)
   return(coll.df)
 }
 
@@ -95,23 +103,25 @@ repos$owner.login <- repos$owner.id
 repos$owner.id <- temp
 repos.df[faulty_owner_logins, c('owner.login', 'owner.id')] <- repos[,  c('owner.login', 'owner.id')]
 
+
+
 ## Visualisation 1 :- Yearwise Programming Language Popularity
 ## Starts Here
 
 repos.df$year <- as.integer(format(as.Date(repos.df$created_at), "%Y"))
 
 
-d1 = group_by(repos.df, language)
-d2 = summarise(d1, val=n())
-d3 = na.omit(arrange(d2, desc(val)))
-d4 = as.character(d3[1:10,]$language)
+languages <- group_by(repos.df, language)
+languages_table <- summarise(languages, val=n())
+languages_table <- na.omit(arrange(languages_table, desc(val)))
+top_languages <- as.character(languages_table[1:10,]$language)
 
 yearly <- group_by(repos.df, language, year)
-data1 <- na.omit(summarise(yearly, val = n()))
-data2 <- data1[data1$language %in% d4, ]
+dataset_table <- na.omit(summarise(yearly, val = n()))
+dataset_1 <- dataset_table[dataset_table$language %in% top_languages, ]
 
 # line chart plot
-ggplot(data = data2, aes(x=year, y=val)) + geom_line(aes(colour=language))
+ggplot(data = dataset_1, aes(x=year, y=val)) + geom_line(aes(colour=language))
 
 ## Ends here
 
@@ -119,14 +129,16 @@ ggplot(data = data2, aes(x=year, y=val)) + geom_line(aes(colour=language))
 ## Visualisation 2 :- Barchart for User Vs Company
 ## Starts Here
 
-d1 <- group_by(users.df, company)
-d2 <- summarise(d1, users = n())
-d3 <- data.frame(arrange(d2, desc(users)))
-d3 = filter(d3, !(company %in% c("-", "None", "", "none")))
-top_companies <- as.character(d3[2:25,]$company)
-comp_to_plot <- users.df[users.df$company %in% top_companies, ]
+companies <- group_by(users.df, company)
+companies_table <- summarise(companies, users = n())
+companies_table <- data.frame(arrange(companies_table, desc(users)))
+companies_table <- filter(companies_table, !(company %in% c("-", "None", "", "none")))
+
+top_companies <- as.character(companies_table[2:25,]$company)
+
+dataset_2 <- users.df[users.df$company %in% top_companies, ]
 
 # barplot
-qplot(comp_to_plot$company, xlab="Companies", ylab="No. of Users", main="Users Count Per Company Graph")
+qplot(dataset_2$company, xlab="Companies", ylab="No. of Users", main="Users Count Per Company Graph")
 
 ## Ends Here
