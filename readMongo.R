@@ -152,29 +152,40 @@ qplot(dataset_2$company, xlab="Companies", ylab="No. of Users",
 ## Visualization 3 :-  Comparison of Companies and Programming Languages
 ## Starts Here
 
-# coerce data.frame to data.table
+# coerce repos.df data.frame to data.table
 DT.repos <- data.table(subset(repos.df, select=c("owner.id","language",
                                                          "owner.login")))
+
+# rename data.table variables
 setnames(DT.repos, c("id", "language", "login"))
 
-DT.users <- data.table(subset(users.df, type="Organization",
-                                      select=c("id", "login")))
+# remove futile companies enteries from users.df
+users.new = na.omit(users.df[ !( users.df$company %in% c("","-","none." ) ),])
 
+# coerce users.df data.frame to data.table
+DT.users <- data.table(subset(users.new,select=c("id", "login", "company")))
+
+# create dataset by merging
 dataset.3 <- merge(DT.repos, DT.users, by=c("id", "login")) 
+
+# remove futile variable from dataset
+dataset.3[, login:=NULL]
 dataset.3[, id:=NULL]
-setnames(dataset.3, c("company", "language"))
 
 # find top companies 
 companies.count <- arrange(summarise(group_by(dataset.3, company), count=n()),
                            desc(count)) 
 top.10.companies <- as.character(companies.count[1:12,]$company)
 
-# filter top 10 companies data from dataset
+# filter top 12 companies data from dataset
 dataset.3 = dataset.3[dataset.3$company %in% top.10.companies, ]
 
-ggplot(dataset.3,aes(x = factor(1),fill=factor(language))) + 
+# pie chart without labels
+ggplot(data = dataset.3, aes(x = factor(1),fill=factor(language))) + 
   facet_wrap(~company) + 
   geom_bar(width = 1,position = "fill") + 
-  coord_polar(theta="y")+xlab("Companies")+ylab("No. of Repos")
+  coord_polar(theta="y", start=0) +
+  xlab("Companies") +
+  ylab("No. of Repos")
 
 ## Ends Here
