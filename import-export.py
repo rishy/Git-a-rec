@@ -28,7 +28,7 @@ def importJson():
     for location, coordinates in data.iteritems():
 
         # checks if location is blank or not
-        if location and users_updated<20:
+        if location:
             fields = {"location": True}
             query = {
                         "location": location,
