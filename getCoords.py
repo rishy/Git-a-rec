@@ -46,17 +46,21 @@ for user in db.users.find({},{'location': True, 'latitude': True},
 		# Get the id and location of current user
 		user_id = user.get('_id')
 		user_loc = user.get('location')	
-
+		coords = {}
+		
 		# If some other document has already got the coordinates of current location
 		# then use these existing coords instead
 		if user_loc:
 			coords = db.users.find_one({'location': user_loc},{'latitude': True, 
 				'longitude': True, '_id': False})
+			if coords:
+				print "Found a cached value! with location %s " % user_loc
 
 		# If user location is anything other than 'None' or "" 
 		# and coords is not defined yet
 		if bool(user_loc and not coords):
 
+			print "-------------New Entry------------"
 			try:
 				# Get the user location
 			    location = geolocator.geocode(user_loc, timeout = 10)
@@ -72,6 +76,7 @@ for user in db.users.find({},{'location': True, 'latitude': True},
 			# Add 1 to the counter
 			counter += 1
 			print "Counter: %d" % counter	
+			print "----------------End-----------------"
 
 		# If there was no previous data for current _id or location value was missing
 		if not coords:
