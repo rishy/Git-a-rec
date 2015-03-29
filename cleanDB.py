@@ -1,23 +1,21 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# If a mongoDB instance is not running on your machine then run it at
-# localhost
-# By default it will start on port 27017
-# Also make sure that there is a 'github' database with collections
-# 'repos' and 'users'
+import json
+import connect
 
-import pymongo
-from pymongo import MongoClient
+# print python dict as json
+def printAsJson(dict, popKey = "_id"):
+    dict.pop(popKey, None)
+    print "=================================================="
+    print json.dumps(dict, indent=2)
+    print "=================================================="
 
 # main funtion
 def main():
-    # Create a MongoClient with running instance of mongo with
-    # default settings
-    mongo = MongoClient()
 
-    # Get the 'github' database
-    db = mongo.github
+    # get github mongodb object
+    db = connect.githubDb()
 
     # Get the 'repo' collection
     db.repos = db.repos
@@ -124,11 +122,13 @@ def main():
                             "default_branch":""
                         }
 
-    print "Cleaning Repos ....."
+    print "\nCleaning Repos .....\n"
+
     # Remove 'unset_repo_fields' from all the documents in 'repos' collection
     db.repos.update({}, {'$unset': unset_repo_fields}, multi = True)
 
-    print db.repos.find_one()
+    printAsJson(db.repos.find_one())
+
 
     # Fields in untrimmed user document
     user_fields = ["_id", "url", "avatar_url", "created_at", "login", "id",
@@ -164,11 +164,12 @@ def main():
                             "site_admin":""
                         }
 
-    print "Cleaning Users ....."
+    print "\n\nCleaning Users .....\n"
+
     # Remove 'unset_user_fields' from all the documents in 'users' collection
     db.users.update({}, {'$unset': unset_user_fields}, multi = True)
 
-    print db.users.find_one()
+    printAsJson(db.users.find_one())
 
     # Remove duplicate documents from users and repos collections
     db.repos.ensure_index([('full_name', pymongo.ASCENDING), ('unique', True), ('dropDups', True)])
