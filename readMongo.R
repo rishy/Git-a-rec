@@ -54,7 +54,7 @@ get_mongo_res <- function(json, ns, trimmed_fields){
   bson <- mongo.bson.from.JSON(json)
 
   # Returned mongo cursor for repos collection
-  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 50000L)
+  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 5000)
 
   # Imputes missing fields in documents
   res_list <- lapply(res, function(x) {
