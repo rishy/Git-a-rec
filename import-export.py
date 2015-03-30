@@ -20,15 +20,22 @@ def importJson():
     db = connect.githubDb()
 
     # open file and get the Json data
-    with open("user_locations_coordinates.json", "r") as users_json:
+    with open("user_locations_import_coordinates.json", "r") as users_json:
         data = json.load(users_json)
 
+    with open("user_locations_exported_coordinates.json", "r") as existing_users_json:
+        existing_data = json.load(existing_users_json).keys()
+
+    msg = " Total %d Locations to be Loaded" % (len(data))
+    acknowledgeUser( message = msg );
+
+    cnt = 1
     users_updated = 0
 
     for location, coordinates in data.iteritems():
 
         # checks if location is blank or not
-        if location:
+        if location and location not in existing_data:
             fields = {"location": True}
             query = {
                         "location": location,
@@ -38,7 +45,8 @@ def importJson():
 
             users = db.users.find(query, fields)
 
-            print "\nFound %d new users have location : %s" % (users.count(), location)
+            print "\nFound %d new user(s) having location : %s" % (users.count(), location)
+
 
             if(users.count()>0):
                 users_updated += users.count()
@@ -48,11 +56,15 @@ def importJson():
             for user in users:
                 db.users.update({ "_id" : user.get('_id') },{ '$set' :coordinates})
 
+            cnt += 1
+
     msg = "    Total %d Users Updated." % (users_updated)
     acknowledgeUser(message = msg)
 
 # export json from mongo db
 def exportJson():
+
+    print "\nExporting Data to Json File ........"
 
     # get github mongodb object
     db = connect.githubDb()
@@ -81,7 +93,7 @@ def exportJson():
                                         "longitude" : longitude
                                     }
 
-    with open("user_locations_coordinates.json", "w") as fp:
+    with open("user_locations_exported_coordinates.json", "w") as fp:
         json.dump(locations_dict, fp)
 
     msg = "    Total %d Unique Locations Founded." % (len(locations))
