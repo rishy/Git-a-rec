@@ -47,7 +47,6 @@ def importJson():
 
             print "\nFound %d new user(s) having location : %s" % (users.count(), location)
 
-
             if(users.count()>0):
                 users_updated += users.count()
                 print "===> Updating Location : %s" % (location)
