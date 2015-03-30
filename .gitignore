@@ -1,5 +1,5 @@
 Dataset
 .Rhistory
-.pyc
+*.pyc
 .RData
 user_locations_coordinates.json
