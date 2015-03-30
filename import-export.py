@@ -52,8 +52,7 @@ def importJson():
                 print "===> Updating Location : %s" % (location)
 
             # set latitude and longitude of all founded users
-            for user in users:
-                db.users.update({ "_id" : user.get('_id') },{ '$set' :coordinates})
+            db.users.update({"location": location }, { '$set':coordinates}, multi = True)
 
             cnt += 1
 

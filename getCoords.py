@@ -81,7 +81,12 @@ def main():
 
 			# Finally add two new fields in current document
 			# NaN values are added if location was mentioned in a document
-			db.users.update({'_id': user_id}, {'$set': coords})
+			query = {
+                        "location": user_loc,
+                        "latitude" : {"$exists" : 0},
+                        "longitude" : {"$exists" : 0}
+                    }                    
+			db.users.update(query, {'$set': coords}, multi = True)
 
 
 if __name__ == '__main__':
