@@ -23,6 +23,10 @@ def importJson():
     with open("user_locations_coordinates.json", "r") as users_json:
         data = json.load(users_json)
 
+    msg = " Total %d Locations to be Loaded" % (len(data))
+    acknowledgeUser( message = msg );
+
+    cnt = 1
     users_updated = 0
 
     for location, coordinates in data.iteritems():
@@ -38,7 +42,7 @@ def importJson():
 
             users = db.users.find(query, fields)
 
-            print "\nFound %d new users have location : %s" % (users.count(), location)
+            print "\n %d ) Found %d new users have location : %s" % (cnt, users.count(), location)
 
             if(users.count()>0):
                 users_updated += users.count()
@@ -48,11 +52,15 @@ def importJson():
             for user in users:
                 db.users.update({ "_id" : user.get('_id') },{ '$set' :coordinates})
 
+            cnt += 1
+
     msg = "    Total %d Users Updated." % (users_updated)
     acknowledgeUser(message = msg)
 
 # export json from mongo db
 def exportJson():
+
+    print "\nExporting Data to Json File ........"
 
     # get github mongodb object
     db = connect.githubDb()
