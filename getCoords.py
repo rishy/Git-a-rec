@@ -32,10 +32,13 @@ def main():
     counter = 0
 
     #db.users.update({}, {'$unset' : {'latitude': "", "longitude": ""}}, multi = True)
+    cursor = db.users.find({'latitude' : {'$exists' : False}},{'location': True, 'latitude': True},
+    	skip = start_idx - 1, limit = lim + 1)
+
+    print "Total %d new locations to be fetched" % cursor.count()
 
     # Iterate over all the documents in 'users' collection
-    for user in db.users.find({},{'location': True, 'latitude': True},
-    	skip = start_idx - 1, limit = lim + 1):
+    for user in cursor:
 
 		# Skip users already having coordinates
 		if 'latitude' not in user:
@@ -68,7 +71,8 @@ def main():
 						coords = {'latitude': location.latitude, 'longitude': location.longitude}
 
 				except Exception as e:
-					print("Error: geocode failed on input %s with message %s"%(user_loc, e.msg))
+					print(e.message)
+					#print("Error: geocode failed on input %s with message %s"%(user_loc, e.msg))
 
 				# Add 1 to the counter
 				counter += 1

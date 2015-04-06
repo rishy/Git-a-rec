@@ -26,7 +26,7 @@ def importJson():
     with open("user_locations_exported_coordinates.json", "r") as existing_users_json:
         existing_data = json.load(existing_users_json).keys()
 
-    msg = " Total %d Locations to be Imported" % (len(data))
+    msg = " Total %d New Locations to be Imported" % (len(set(data).difference(existing_data)))
     acknowledgeUser( message = msg );
 
     cnt = 1
@@ -45,7 +45,7 @@ def importJson():
 
             users = db.users.find(query, fields)
 
-            print "\n %) Found %d new user(s) having location : %s" % (cnt,users.count(), location)
+            print "\n %d) Found %d new user(s) having location : %s" % (cnt, users.count(), location)
 
             if(users.count()>0):
                 users_updated += users.count()
