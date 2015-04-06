@@ -7,6 +7,10 @@ library(plyr)
 library(dplyr)
 library(ggplot2)
 library(data.table)
+library(ggmap)
+library(maps)
+library(maptools)
+library(rworldmap)
 
 # Create a mongod instance with default settingsa
 mongo <- mongo.create()
@@ -45,7 +49,8 @@ all_user_fields <- c("_id", "url", "avatar_url", "created_at", "login",
 
 # Useful Fields after trimming the users collection from database
 trimmed_user_fields <- sort(c("_id", "login", "id", "followers","type",
-                              "following","location", "company", "hireable"))
+                              "following","location", "company", "hireable", "latitude",
+                              "longitude"))
 
 # A function to fetch data from mongodb database
 get_mongo_res <- function(json, ns, trimmed_fields){
@@ -54,7 +59,7 @@ get_mongo_res <- function(json, ns, trimmed_fields){
   bson <- mongo.bson.from.JSON(json)
 
   # Returned mongo cursor for repos collection
-  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 5000)
+  res <- mongo.find.all(mongo, ns = ns, query = bson, limit = 60000)
 
   # Imputes missing fields in documents
   res_list <- lapply(res, function(x) {
@@ -154,7 +159,7 @@ qplot(dataset_2$company, xlab="Companies", ylab="No. of Users",
 
 # coerce repos.df data.frame to data.table
 DT.repos <- data.table(subset(repos.df, select=c("owner.id","language",
-                                                         "owner.login")))
+                                                 "owner.login")))
 
 # rename data.table variables
 setnames(DT.repos, c("id", "language", "login"))
@@ -187,5 +192,93 @@ ggplot(data = dataset.3, aes(x = factor(1),fill=factor(language))) +
   coord_polar(theta="y", start=0) +
   xlab("Companies") +
   ylab("No. of Repos")
+
+## Ends Here
+
+## Visualization 4 :- Spatial visualization of github users
+## Starts Here
+
+DT.users <- data.table(subset(users.df, select=c("id", "login", "location",
+                                                 "latitude", "longitude")))
+DT.users <- na.omit(DT.users)
+DT.users <- subset(DT.users, latitude!="NaN")
+DT.users$latitude <- as.numeric(DT.users$latitude)
+DT.users$longitude <- as.numeric(DT.users$longitude)
+
+users.spatial.pop <- summarise(group_by(DT.users, latitude, longitude), 
+                                 pop = n())
+users.spatial.pop <- arrange(users.spatial.pop, desc(pop))
+
+users.spatial.pop$latitude <- as.numeric(users.spatial.pop$latitude)
+users.spatial.pop$longitude <- as.numeric(users.spatial.pop$longitude)
+
+
+## Method 1 : Using ggmap and ggplot
+# get map centered at mean of all longitude and latitude
+basemap <- get_map(location=colMeans(select(users.spatial.pop, longitude, 
+                                          latitude)), zoom = 3)
+
+
+# add map
+map.users <- ggmap(basemap, extent='panel', base_layer=ggplot(data = users.spatial.pop,
+                                                         aes(x = longitude, 
+                                                             y = latitude)))
+
+# add data points
+map.users <- map.users + geom_point(aes(size = pop ), color = "darkblue",
+                                    alpha = .6)
+
+# add plot labels
+map.users <- map.users + labs(title = "Spatial Visualization of Github Users",
+                              x = "Longitude", y = "Latitude")
+
+map.users <- map.users + scale_size_area(breaks = c(1, 50, 100, 200, 300, 500, 1000), 
+                                    labels = c(1, 50, 100, 200, 300, 500, 1000), 
+                                    name = "Users Population")
+
+# add title theme
+map.users <- map.users + theme(plot.title = element_text(hjust = 0, vjust = 1, 
+                                                         face = c("bold")))
+
+# show map of users
+print(map.users)
+
+
+
+## Method 2 : Using rworldmap 
+## rworldmap
+# get world map
+worldmap <- getMap(resolution = "low")
+
+# plot the map
+plot(worldmap)
+
+# add dataset points to map
+points(DT.users$longitude, DT.users$latitude, col="red", cex=.6)
+
+
+
+## Method 3 Using ggplot and Base World Map
+mp <- NULL
+
+# create a layer of borders
+mapWorld <- borders("world", colour="gray50", fill="gray50") 
+
+#Now Layer the cities on top
+mp <- ggplot() + mapWorld 
+mp1 <- mp + geom_point(data = DT.users, aes(x=longitude, y=latitude) , colour="white", 
+                       fill="red", shape=21, size = 2, alpha = .6) 
+mp1 <- mp1 + theme_bw()
+mp1 <- mp1 + labs(title = "Spatial Visualization of Github Users",
+                  x = "Longitude", y = "Latitude")
+mp1
+
+mp2 <- mp + geom_point(data = users.spatial.pop,  aes(x=longitude, y=latitude, size = pop), 
+                        colour="blue", fill="darkblue", shape=21)
+mp2 <- mp2 + scale_size_area(breaks=c(1, 50, 100, 200, 300, 500, 1000), "User Population")
+mp2 <- mp2 + theme_bw()
+mp2 <- mp2 + labs(title = "Spatial Visualization of Github Users",
+                  x = "Longitude", y = "Latitude")
+mp2
 
 ## Ends Here
