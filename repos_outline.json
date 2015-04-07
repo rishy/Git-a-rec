@@ -1,0 +1,17 @@
+{
+    "map" : [
+        ["fork", "fork"],
+        ["watchers", "watchers"],
+        ["language", "language"],
+        ["created_at", "created_at"],
+        ["updated_at", "updated_at"],
+        ["private", "private"],
+        ["full_name", "full_name"],
+        ["owner.login", "owner.login"],
+        ["owner.id", "owner.id"],
+        ["organization.login", "organization.login"],
+        ["organization.id", "organization.id"],
+        ["forks", "forks"],
+        ["id", "id"]
+    ]
+}
