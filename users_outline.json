@@ -1,0 +1,14 @@
+{
+    "map": [
+        ["company","company"],
+        ["longitude","longitude"],
+        ["latitude","latitude"],
+        ["hireable","hireable"],
+        ["followers", "followers"],
+        ["location","location"],
+        ["following", "following"],
+        ["login","login"],
+        ["type","type"],
+        ["id", "id"]
+    ]
+}

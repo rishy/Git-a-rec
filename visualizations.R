@@ -100,7 +100,7 @@ repos <- repos.df[faulty_org_logins, c('organization.login', 'organization.id')]
 temp <- repos$organization.login
 repos$organization.login <- repos$organization.id
 repos$organization.id <- temp
-repos.df[faulty_org_logins, c('organization.login', 'organization.id')] <- 
+repos.df[faulty_org_logins, c('organization.login', 'organization.id')] <-
   repos[,  c('organization.login', 'organization.id')]
 
 # Swap missing values of owner.login and owner.id in repos.df
@@ -109,7 +109,7 @@ repos <- repos.df[faulty_owner_logins, c('owner.login', 'owner.id')]
 temp <- repos$owner.login
 repos$owner.login <- repos$owner.id
 repos$owner.id <- temp
-repos.df[faulty_owner_logins, c('owner.login', 'owner.id')] <- 
+repos.df[faulty_owner_logins, c('owner.login', 'owner.id')] <-
   repos[,  c('owner.login', 'owner.id')]
 
 
@@ -141,7 +141,7 @@ ggplot(data = dataset_1, aes(x=year, y=val)) + geom_line(aes(colour=language))
 companies <- group_by(users.df, company)
 companies_table <- summarise(companies, users = n())
 companies_table <- data.frame(arrange(companies_table, desc(users)))
-companies_table <- filter(companies_table, !(company %in% c("-", "None", 
+companies_table <- filter(companies_table, !(company %in% c("-", "None",
                                                             "", "none")))
 
 top_companies <- as.character(companies_table[2:25,]$company)
@@ -149,7 +149,7 @@ top_companies <- as.character(companies_table[2:25,]$company)
 dataset_2 <- users.df[users.df$company %in% top_companies, ]
 
 # barplot
-qplot(dataset_2$company, xlab="Companies", ylab="No. of Users", 
+qplot(dataset_2$company, xlab="Companies", ylab="No. of Users",
       main="Users Count Per Company Graph")
 
 ## Ends Here
@@ -171,24 +171,24 @@ users.new = na.omit(users.df[ !( users.df$company %in% c("","-","none." ) ),])
 DT.users <- data.table(subset(users.new,select=c("id", "login", "company")))
 
 # create dataset by merging
-dataset.3 <- merge(DT.repos, DT.users, by=c("id", "login")) 
+dataset.3 <- merge(DT.repos, DT.users, by=c("id", "login"))
 
 # remove futile variable from dataset
 dataset.3[, login:=NULL]
 dataset.3[, id:=NULL]
 
-# find top companies 
+# find top companies
 companies.count <- arrange(summarise(group_by(dataset.3, company), count=n()),
-                           desc(count)) 
+                           desc(count))
 top.10.companies <- as.character(companies.count[1:12,]$company)
 
 # filter top 12 companies data from dataset
 dataset.3 = dataset.3[dataset.3$company %in% top.10.companies, ]
 
 # pie chart without labels
-ggplot(data = dataset.3, aes(x = factor(1),fill=factor(language))) + 
-  facet_wrap(~company) + 
-  geom_bar(width = 1,position = "fill") + 
+ggplot(data = dataset.3, aes(x = factor(1),fill=factor(language))) +
+  facet_wrap(~company) +
+  geom_bar(width = 1,position = "fill") +
   coord_polar(theta="y", start=0) +
   xlab("Companies") +
   ylab("No. of Repos")
@@ -205,7 +205,7 @@ DT.users <- subset(DT.users, latitude!="NaN")
 DT.users$latitude <- as.numeric(DT.users$latitude)
 DT.users$longitude <- as.numeric(DT.users$longitude)
 
-users.spatial.pop <- summarise(group_by(DT.users, latitude, longitude), 
+users.spatial.pop <- summarise(group_by(DT.users, latitude, longitude),
                                  pop = n())
 users.spatial.pop <- arrange(users.spatial.pop, desc(pop))
 
@@ -213,67 +213,22 @@ users.spatial.pop$latitude <- as.numeric(users.spatial.pop$latitude)
 users.spatial.pop$longitude <- as.numeric(users.spatial.pop$longitude)
 
 
-## Method 1 : Using ggmap and ggplot
-# get map centered at mean of all longitude and latitude
-basemap <- get_map(location=colMeans(select(users.spatial.pop, longitude, 
-                                          latitude)), zoom = 3)
-
-
-# add map
-map.users <- ggmap(basemap, extent='panel', base_layer=ggplot(data = users.spatial.pop,
-                                                         aes(x = longitude, 
-                                                             y = latitude)))
-
-# add data points
-map.users <- map.users + geom_point(aes(size = pop ), color = "darkblue",
-                                    alpha = .6)
-
-# add plot labels
-map.users <- map.users + labs(title = "Spatial Visualization of Github Users",
-                              x = "Longitude", y = "Latitude")
-
-map.users <- map.users + scale_size_area(breaks = c(1, 50, 100, 200, 300, 500, 1000), 
-                                    labels = c(1, 50, 100, 200, 300, 500, 1000), 
-                                    name = "Users Population")
-
-# add title theme
-map.users <- map.users + theme(plot.title = element_text(hjust = 0, vjust = 1, 
-                                                         face = c("bold")))
-
-# show map of users
-print(map.users)
-
-
-
-## Method 2 : Using rworldmap 
-## rworldmap
-# get world map
-worldmap <- getMap(resolution = "low")
-
-# plot the map
-plot(worldmap)
-
-# add dataset points to map
-points(DT.users$longitude, DT.users$latitude, col="red", cex=.6)
-
-
-
-## Method 3 Using ggplot and Base World Map
+# Using ggplot and Base World Map
 mp <- NULL
 
 # create a layer of borders
-mapWorld <- borders("world", colour="gray50", fill="gray50") 
+mapWorld <- borders("world", colour="gray50", fill="gray50")
 
 #Now Layer the cities on top
-mp <- ggplot() + mapWorld 
-mp1 <- mp + geom_point(data = DT.users, aes(x=longitude, y=latitude) , colour="white", 
-                       fill="red", shape=21, size = 2, alpha = .6) 
+mp <- ggplot() + mapWorld
+mp1 <- mp + geom_point(data = DT.users, aes(x=longitude, y=latitude) , colour="white",
+                       fill="red", shape=21, size = 2, alpha = .6)
 mp1 <- mp1 + theme_bw()
 mp1 <- mp1 + labs(title = "Spatial Visualization of Github Users",
                   x = "Longitude", y = "Latitude")
 mp1
 
-mp2 <- mp + geom_point(data = users.spatial.pop,  aes(x=longitude, y=latitude, size = pop), 
+mp2 <- mp + geom_point(data = users.spatial.pop,  aes(x=longitude, y=latitude, size = pop),
                         colour="blue", fill="darkblue", shape=21)
 mp2 <- mp2 + scale_size_area(breaks=c(1, 50, 100, 200, 300, 500, 1000), "User Population")
 mp2 <- mp2 + theme_bw()
