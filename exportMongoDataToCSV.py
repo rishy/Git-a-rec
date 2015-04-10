@@ -7,7 +7,7 @@ import subprocess
 import os
 import sys
 import logging
-
+import fnmatch
 
 def runCommand(command):
     process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
@@ -20,9 +20,18 @@ def convertUsersToCSV():
     print "Done...!!!"
 
 def convertReposToCSV():
-    bashCommand = "python json2csv.py repos_dump_in_json.json \
-                    repos_outline.json -o repos_dump_in_csv.csv"
-    runCommand(bashCommand)
+    repos_dump_files = fnmatch.filter(os.listdir(os.curdir), \
+        'repos_dump_in_json_*.json' )
+    repos_dump_files.sort()
+    index = 1
+    for json_file_name in repos_dump_files:
+        csv_file_name = "repos_dump_in_csv_%d.csv"%(index)
+        bashCommand = "python json2csv.py %s repos_outline.json -o %s"% \
+                        (json_file_name, csv_file_name)
+        # print bashCommand
+        runCommand(bashCommand)
+        print " %s file converted to %s successfully. "%(json_file_name, csv_file_name)
+        index += 1
     print "Done...!!!"
 
 def exportUsers():
@@ -49,6 +58,29 @@ def exportUsers():
 
         print "Done...!!!"
 
+def filterRepo(repo):
+    fields = ["fork", "private","created_at", "id","forks","full_name",
+                "watchers", "language","updated_at"]
+    owner_nested_fields = ["login", "id"]
+    organization_nested_fields = ["login", "id"]
+
+    cleaned_repo = dict()
+    for k1, v1 in repo.iteritems():
+        if isinstance(v1, dict) and k1=="owner":
+            cleaned_repo["owner"] = {}
+            for k2, v2 in v1.iteritems():
+                if k2 in owner_nested_fields:
+                    cleaned_repo["owner"][k2] = v2
+        elif isinstance(v1, dict) and k1=="organization":
+            cleaned_repo["organization"] = {}
+            for k2, v2 in v1.iteritems():
+                if k2 in organization_nested_fields:
+                    cleaned_repo["organization"][k2] = v2
+        elif k1 in fields:
+            cleaned_repo[k1] = v1
+
+    return cleaned_repo
+
 def exportRepos():
     # get github mongodb object
     db = connect.githubDb()
@@ -56,22 +88,30 @@ def exportRepos():
     # Get the 'repos' collection
     db.repos = db.repos
 
-    try:
-        repos = db.repos.find({}, { '_id' : False },  no_cursor_timeout=True)
+    skips = [0, 1000000, 2000000, 3000000, 4000000]
+    # skips = [0, 10, 20, 30, 40]
+    limit = 1000000
+    index = 1
+    for skip in skips:
+        file_data = []
+        try:
+            repos = db.repos.find({}, { '_id' : False }, skip = skip, limit= limit)
+            for repo in repos:
+                # print repo
+                file_data.append(filterRepo(repo))
+        except Exception as e:
+            logging.exception("Something awful happened!")
+            # will print this message followed by traceback
+        finally:
+            repos_count = len(file_data)
+            file_name = "repos_dump_in_json_%d.json"%(index)
 
-        repos_data = []
+            print " %d repos recods are added in file %s "%(repos_count,file_name)
+            with open(file_name, "w") as f:
+                json.dump(file_data, f)
+            index += 1
 
-        for repo in repos:
-            # print repo
-            repos_data.append(repo)
-    except Exception as e:
-        logging.exception("Something awful happened!")
-        # will print this message followed by traceback
-    finally:
-        with open("repos_dump_in_json.json", "w") as f:
-            json.dump(repos_data, f)
-
-        print "Done...!!!"
+    print "Done...!!!"
 
 if __name__ == '__main__':
 
