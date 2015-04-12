@@ -5,6 +5,8 @@ Dataset
 user_locations_exported_coordinates.json
 user_locations_import_coordinates.json
 users_dump_in_json.json
+users_dump_in_json_*.json
 repos_dump_in_json_*.json
 *.csv
 map/
+.gitignore~

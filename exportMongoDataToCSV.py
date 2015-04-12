@@ -14,9 +14,18 @@ def runCommand(command):
     output = process.communicate()[0]
 
 def convertUsersToCSV():
-    bashCommand = "python json2csv.py users_dump_in_json.json \
-                    users_outline.json -o users_dump_in_csv.csv"
-    runCommand(bashCommand)
+    users_dump_files = fnmatch.filter(os.listdir(os.curdir), \
+        'users_dump_in_json_*.json' )
+    users_dump_files.sort()
+    index = 1
+    for json_file_name in users_dump_files:
+        csv_file_name = "users_dump_in_csv_%d.csv"%(index)
+        bashCommand = "python json2csv.py %s users_outline.json -o %s"% \
+                        (json_file_name, csv_file_name)
+        # print bashCommand
+        runCommand(bashCommand)
+        print " %s file converted to %s successfully. "%(json_file_name, csv_file_name)
+        index += 1
     print "Done...!!!"
 
 def convertReposToCSV():
@@ -38,25 +47,33 @@ def exportUsers():
     # get github mongodb object
     db = connect.githubDb()
 
-    # Get the 'users' collection
+    # Get the 'repos' collection
     db.users = db.users
 
-    try:
-        users = db.users.find({}, { '_id' : False })
+    skips = [0, 600000, 1200000]
+    # skips = [0, 10, 20, 30, 40]
+    limit = 600000
+    index = 1
+    for skip in skips:
+        file_data = []
+        try:
+            users = db.users.find({}, { '_id' : False }, skip = skip, limit= limit)
+            for user in users:
+                # print user
+                file_data.append(user)
+        except Exception as e:
+            logging.exception("Something awful happened!")
+            # will print this message followed by traceback
+        finally:
+            users_count = len(file_data)
+            file_name = "users_dump_in_json_%d.json"%(index)
 
-        users_data = []
+            print " %d users recods are added in file %s "%(users_count,file_name)
+            with open(file_name, "w") as f:
+                json.dump(file_data, f)
+            index += 1
 
-        for user in users:
-            # print user
-            users_data.append(user)
-    except Exception as e:
-        logging.exception("Something awful happened!")
-        # will print this message followed by traceback
-    finally:
-        with open("users_dump_in_json.json", "w") as f:
-            json.dump(users_data, f)
-
-        print "Done...!!!"
+    print "Done...!!!"
 
 def filterRepo(repo):
     fields = ["fork", "private","created_at", "id","forks","full_name",
