@@ -1,11 +1,9 @@
 # Load all required R packages
-library(plyr)
 library(dplyr)
 library(ggplot2)
 library(data.table)
-library(maps)
-library(maptools)
 library(leaflet)
+library(fpc)
 
 # read repos and users csv files
 repos.df = fread('repos_dump_in_csv.csv', header = T,sep = ',', stringsAsFactors = FALSE)
@@ -117,45 +115,71 @@ rm(top.10.companies)
 ## Visualization 4 :- Spatial visualization of github users
 ## Starts Here
 
-DT.users <- subset(users.df, select=c("id", "login", "location",
-                                      "latitude", "longitude"))
-DT.users <- na.omit(DT.users)
-DT.users <- subset(DT.users, latitude!="NaN")
-DT.users$latitude <- as.numeric(DT.users$latitude)
-DT.users$longitude <- as.numeric(DT.users$longitude)
+DT.users <- select(users.df, id, login, location, latitude, longitude)
+DT.users <- DT.users %>% 
+  na.omit() %>%
+  mutate( latitude = as.numeric(latitude),
+          longitude = as.numeric(longitude)
+  )
 
 users.spatial.pop <- DT.users %>%
-  group_by(latitude, longitude, location) %>%
-  summarise(pop = n()) %>%
+  group_by(longitude, latitude, location) %>%
+  summarise(population = n()) %>%
   ungroup() %>%
-  arrange(desc(pop))
+  arrange(desc(population)) %>%
+  na.omit()
 
-setnames(users.spatial.pop, c("lat", "lng", "location", "size"))
+# DBSCAN Clustering
+DBSCAN <- dbscan(select(users.spatial.pop, latitude,longitude), 
+                 eps=0.7, MinPts = 3)
 
-maxSize = max(users.spatial.pop$size)
-radius = (users.spatial.pop$size/maxSize)*100000
+users.spatial.pop <- mutate(users.spatial.pop, cluster = DBSCAN$cluster)
 
+filter(users.spatial.pop, cluster==1)
 
-col.df = data.frame( breaks = c(10, 50, 100,300,500,1000,3000, maxSize), 
-                     color = c("blue", "lightseagreen", "green", "lightgray", "blue",
-                               "purple", "orange", "red"),
+non.outliners <- filter(users.spatial.pop, cluster != 0) %>% 
+  group_by(cluster) %>%
+  summarise( population = sum(population),
+             latitude = mean(latitude),
+             longitude = mean(longitude)
+  ) %>%
+  select(longitude, latitude, population, cluster) %>%
+  arrange(desc(population))
+
+outliners <- filter(users.spatial.pop, cluster == 0) %>%
+  select(longitude, latitude, population, cluster) %>%
+  arrange(desc(population))
+
+users.spatial.pop <- rbind(non.outliners, outliners ) %>%
+  select(longitude, latitude, population)
+
+# adding extra labels in dataset
+maxSize = max(users.spatial.pop$population)
+radius = (users.spatial.pop$population/maxSize)*100000
+
+col.df = data.frame( breaks = c(10, 50, 100,300,500,1000,10000, maxSize), 
+                     color = c("darkblue", "lightseagreen", "green", "lightgray",
+                               "lightblue", "purple", "orange", "red"),
                      radius = c(1, 50, 200, 1000, 10000, 25000, 60000, 150000)
 )
 
-users.spatial.pop$color = rep("red", length(users.spatial.pop$size))
-users.spatial.pop$radius = rep(0, length(users.spatial.pop$size))
+users.spatial.pop$color = rep("red", length(users.spatial.pop$population))
+users.spatial.pop$radius = rep(0, length(users.spatial.pop$population))
 
 for(bk in rev(col.df$breaks)){
   
-  users.spatial.pop[users.spatial.pop$size <= bk,]$color <- col.df[match(c(bk), col.df$breaks), c('color')]
+  users.spatial.pop[users.spatial.pop$population <= bk,]$color <- 
+    col.df[match(c(bk), col.df$breaks), c('color')]
   
-  users.spatial.pop[users.spatial.pop$size <= bk,]$radius <- col.df[match(c(bk), col.df$breaks), c('radius')]
+  users.spatial.pop[users.spatial.pop$population <= bk,]$radius <- 
+    col.df[match(c(bk), col.df$breaks), c('radius')]
 }
 
+# plot world map using leaflet
 m = leaflet() %>% addTiles()
-m %>% addCircles(users.spatial.pop$lng, users.spatial.pop$lat, color = users.spatial.pop$color, radius = 3000)
-
-
-
+m %>% addCircles(users.spatial.pop$longitude, users.spatial.pop$latitude, 
+                 color = users.spatial.pop$color, 
+                 radius = users.spatial.pop$radius 
+)
 
 ## Ends Here
