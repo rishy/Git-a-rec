@@ -6,62 +6,118 @@ library(leaflet)
 library(fpc)
 
 # read repos and users csv files
-repos.df = fread('repos_dump_in_csv.csv', header = T,sep = ',', stringsAsFactors = FALSE)
-users.df = fread('users_dump_in_csv.csv', header = T,sep = ',', stringsAsFactors = FALSE)
+repos.df = fread('repos_dump_in_csv.csv', header = T,sep = ',', 
+                 stringsAsFactors = FALSE, nrows=500000)
+users.df = fread('users_dump_in_csv.csv', header = T,sep = ',', 
+                 stringsAsFactors = FALSE)
+
+# meaningless values
+vague.values = c(""," ", "-","none", "none.", "n/a", "na")
 
 ## Visualization 1 :- Programming languages trends in last few years
 ## Starts Here
 
-repos.df$year <- as.integer(format(as.Date(repos.df$created_at), "%Y"))
+# add year column in repos.df
+repos.df <- mutate(repos.df, 
+                   year = as.integer(format(as.Date(created_at), "%Y"))
+)
 
-languages <- group_by(repos.df, language)
-languages_table <- summarise(languages, val=n())
-languages_table <- na.omit(arrange(languages_table, desc(val)))
-languages_table <- filter(languages_table, !(language %in% c("-", "None",
-                                                            "", "none")))
-top_languages <- as.character(languages_table[1:10,]$language)
+# find the top 10 languages
+languages <- select(repos.df, language) %>%
+  na.omit() %>%
+  filter(!(language %in% vague.values )) %>%
+  group_by(language) %>%
+  summarise(val=n()) %>%
+  ungroup() %>%
+  arrange(desc(val))
 
-yearly <- group_by(repos.df, language, year)
-dataset_table <- na.omit(summarise(yearly, val = n()))
-dataset_1 <- dataset_table[dataset_table$language %in% top_languages, ]
+languages.top <- languages$language[1:10]
+
+# find the repos data yearwise
+repos.yearwise <- group_by(repos.df, language, year) %>%
+  summarise(val = n()) %>%
+  na.omit() %>%
+  filter(language %in% languages.top)
 
 # line chart plot
-ggplot(data = dataset_1, aes(x=year, y=val)) + geom_line(aes(colour=language))
+v1 = ggplot(data = repos.yearwise, aes(x=year, y=val)) + 
+  geom_line(aes(colour=language), size=1.2) +
+  labs(title = "Yearwise Programming Languages Trends",
+       x = "Year",
+       y = "Number of Repos",
+       colour = "Languages"
+  ) + 
+  scale_color_discrete(breaks = languages.top, labels = languages.top) +
+  theme(plot.title = element_text(size = rel(1.5), face = "bold", vjust = 1),
+        axis.text = element_text(size = rel(1), colour = "black"),
+        axis.ticks = element_line(size = rel(3)),
+        axis.ticks.length = unit(.3, "cm"),
+        axis.title.y = element_text(size = rel(1.5), face = "bold", 
+                                    vjust = 1 ,angle = 90),
+        axis.title.x = element_text(size = rel(1.5), face = "bold", 
+                                    vjust = -0.5, angle = 0),
+        legend.position = c(0.1, 0.75),
+        legend.justification = c(0.6, 0.6),
+        legend.title = element_text(colour = "black", size = rel(1.5)),
+        legend.text = element_text(colour="black", size = rel(1.2))
+  )
+
+# print graph
+print(v1)
 
 ## Ends here
 
 ## Delete variables of visualization 1
-rm(dataset_1)
-rm(dataset_table)
 rm(languages)
-rm(languages_table)
-rm(yearly)
-rm(top_languages)
+rm(languages.top)
+rm(repos.yearwise)
 
 ## Visualization 2 :- Statistics of users from various Companies on Github
 ## Starts Here
 
-companies <- group_by(users.df, company)
-companies_table <- summarise(companies, users = n())
-companies_table <- data.frame(arrange(companies_table, desc(users)))
-companies_table <- filter(companies_table, !(company %in% c("-", "None",
-                          "", "none","self","student","Student","n/a", "N/A")))
+companies <- select(users.df, company) %>%
+  na.omit() %>%
+  filter(!(tolower(company) %in% c(vague.values, "self","student"))) %>%
+  group_by(users.df, company) %>%
+  summarise(users = n()) %>%
+  ungroup() %>%
+  arrange(desc(users))
+  
+companies.top <- companies$company[1:25]
 
-top_companies <- as.character(companies_table[1:25,]$company)
-
-dataset_2 <- users.df[users.df$company %in% top_companies, ]
+users.companies <- select(users.df, company) %>% 
+  filter(company %in% companies.top )
 
 # barplot
-qplot(dataset_2$company, xlab="Companies", ylab="No. of Users",
-      main="Users Count Per Company Graph")
+v2 = ggplot(data = users.companies, aes(x=reorder(company,company,
+                                                  function(x){-length(x)} ) )
+  ) +
+  geom_histogram(aes(fill=company)) +
+  labs(title = "Histogram of Users in Top Companies",
+       x = "Companies",
+       y = "Number of Users"
+  ) + 
+  scale_fill_discrete(guide = FALSE) +
+  theme(plot.title = element_text(size = rel(1.5), face = "bold", vjust = 1),
+        axis.text = element_text(size = rel(1), colour = "black"),
+        axis.text.x = element_text(face = "bold", angle = 60, hjust=1),
+        axis.ticks = element_line(size = rel(3)),
+        axis.ticks.length = unit(.3, "cm"),
+        axis.title.y = element_text(size = rel(1.5), face = "bold", 
+                                    vjust = 1 ,angle = 90),
+        axis.title.x = element_text(size = rel(1.5), face = "bold", 
+                                    vjust = 0, angle = 0)
+  )
+
+# print the plot
+print(v2)
 
 ## Ends Here
 
 ## Delete variables of visualization 2
 rm(companies)
-rm(companies_table)
-rm(dataset_2)
-rm(top_companies)
+rm(companies.top)
+rm(users.companies)
 
 ## Visualization 3 :-  Comparison of Companies and Programming Languages
 ## Starts Here
@@ -73,8 +129,10 @@ DT.repos <- subset(repos.df, select=c("owner.id","language",
 # rename data.table variables
 setnames(DT.repos, c("id", "language", "login"))
 
+unwanted.companies.name = c("","-","none.", "None", "none")
+
 # remove futile companies enteries from users.df
-users.new = na.omit(users.df[ !( users.df$company %in% c("","-","none." ) ),])
+users.new = na.omit(users.df[ !( users.df$company %in% unwanted.companies.name ),])
 
 # subsetting users.df
 DT.users <- subset(users.new,select=c("id", "login", "company"))
@@ -115,12 +173,12 @@ rm(top.10.companies)
 ## Visualization 4 :- Spatial visualization of github users
 ## Starts Here
 
-DT.users <- select(users.df, id, login, location, latitude, longitude)
-DT.users <- DT.users %>% 
-  na.omit() %>%
+
+DT.users <- select(users.df, id, login, location, latitude, longitude) %>%
   mutate( latitude = as.numeric(latitude),
           longitude = as.numeric(longitude)
-  )
+  ) %>%
+  na.omit()
 
 users.spatial.pop <- DT.users %>%
   group_by(longitude, latitude, location) %>%
@@ -135,7 +193,7 @@ DBSCAN <- dbscan(select(users.spatial.pop, latitude,longitude),
 
 users.spatial.pop <- mutate(users.spatial.pop, cluster = DBSCAN$cluster)
 
-filter(users.spatial.pop, cluster==1)
+filter(users.spatial.pop, cluster==10)
 
 non.outliners <- filter(users.spatial.pop, cluster != 0) %>% 
   group_by(cluster) %>%
@@ -157,10 +215,10 @@ users.spatial.pop <- rbind(non.outliners, outliners ) %>%
 maxSize = max(users.spatial.pop$population)
 radius = (users.spatial.pop$population/maxSize)*100000
 
-col.df = data.frame( breaks = c(10, 50, 100,300,500,1000,10000, maxSize), 
-                     color = c("darkblue", "lightseagreen", "green", "lightgray",
-                               "lightblue", "purple", "orange", "red"),
-                     radius = c(1, 50, 200, 1000, 10000, 25000, 60000, 150000)
+col.df = data.frame( breaks = c(10, 50, 100, 500, 1000, 10000, 40000, maxSize), 
+                     color = c("darkblue", "lightseagreen", "green", 
+                               "lightblue", "purple", "orange", "red","darkred"),
+                     radius = c(50, 500, 1000, 5000, 15000, 50000, 150000, 300000)
 )
 
 users.spatial.pop$color = rep("red", length(users.spatial.pop$population))
