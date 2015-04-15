@@ -1,18 +1,27 @@
 # Load all required R packages
 library(dplyr)
 library(ggplot2)
+library(grid)
 library(data.table)
 library(leaflet)
 library(fpc)
 
 # read repos and users csv files
-repos.df = fread('repos_dump_in_csv.csv', header = T,sep = ',', 
-                 stringsAsFactors = FALSE, nrows=500000)
-users.df = fread('users_dump_in_csv.csv', header = T,sep = ',', 
-                 stringsAsFactors = FALSE)
+repos.df <- fread('repos_dump_in_csv.csv', header = T,sep = ',', 
+                 stringsAsFactors = FALSE, nrows=200000)
+users.df <- fread('users_dump_in_csv.csv', header = T,sep = ',', 
+                 stringsAsFactors = FALSE, nrows=200000)
 
 # meaningless values
-vague.values = c(""," ", "-","none", "none.", "n/a", "na")
+vague.values <- c(""," ", "-","none", "none.", "n/a", "na")
+companies.vague.values <- c(vague.values, "self","student", "home")
+language.vague.values <- c(vague.values, "Done")
+freelancers <- c("freelance", "freelancer")
+
+# replace freelance with freelancers as company in users.df
+users.df <- mutate(users.df, 
+                   company = ifelse(tolower(company) %in% freelancers, 
+                                    "Freelancers", company))
 
 ## Visualization 1 :- Programming languages trends in last few years
 ## Starts Here
@@ -77,8 +86,8 @@ rm(repos.yearwise)
 
 companies <- select(users.df, company) %>%
   na.omit() %>%
-  filter(!(tolower(company) %in% c(vague.values, "self","student"))) %>%
-  group_by(users.df, company) %>%
+  filter(!(tolower(company) %in% companies.vague.values )) %>%
+  group_by(company) %>%
   summarise(users = n()) %>%
   ungroup() %>%
   arrange(desc(users))
@@ -123,37 +132,46 @@ rm(users.companies)
 ## Starts Here
 
 # subsetting repos.df
-DT.repos <- subset(repos.df, select=c("owner.id","language",
-                                                 "owner.login"))
+DT.repos <- select(repos.df, owner.id, owner.login, language ) %>%
+  filter( !(language %in% language.vague.values) ) %>%
+  na.omit() %>%
+  rename( id = owner.id, login = owner.login ) %>%
+  mutate(id = as.character(id) )
 
-# rename data.table variables
-setnames(DT.repos, c("id", "language", "login"))
-
-unwanted.companies.name = c("","-","none.", "None", "none")
-
-# remove futile companies enteries from users.df
-users.new = na.omit(users.df[ !( users.df$company %in% unwanted.companies.name ),])
-
-# subsetting users.df
-DT.users <- subset(users.new,select=c("id", "login", "company"))
+# subsetting repos.df
+DT.users <- select(users.df, id, login, company) %>%
+  filter( !(company %in% companies.vague.values) ) %>%
+  na.omit()
 
 # create dataset by merging
-dataset.3 <- merge(DT.repos, DT.users, by=c("id", "login"))
-
-# remove futile variable from dataset
-dataset.3[, login:=NULL]
-dataset.3[, id:=NULL]
+repos.users.merged <- merge(DT.repos, DT.users, by=c("id", "login"))
 
 # find top companies
-companies.count <- arrange(summarise(group_by(dataset.3, company), count=n()),
-                           desc(count))
-top.10.companies <- as.character(companies.count[1:12,]$company)
+companies <- group_by(repos.users.merged, company) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  arrange(desc(count))
+
+companies.top <- companies$company[1:12]
+
+# find top languages
+languages <- group_by(repos.users.merged, language) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  arrange(desc(count))
+
+languages.top <- languages$language[1:9]
+
+## fill others in non-top language
+repos.users.merged <- mutate(repos.users.merged, 
+                             language = ifelse( language %in% languages.top,
+                                                language, "Others"))
 
 # filter top 12 companies data from dataset
-dataset.3 = dataset.3[dataset.3$company %in% top.10.companies, ]
+companies.languages = filter(repos.users.merged,  company %in% companies.top )
 
 # pie chart without labels
-ggplot(data = dataset.3, aes(x = factor(1),fill=factor(language))) +
+ggplot(data = companies.languages, aes(x = factor(1),fill=factor(language))) +
   facet_wrap(~company) +
   geom_bar(width = 1,position = "fill") +
   coord_polar(theta="y", start=0) +
@@ -165,20 +183,77 @@ ggplot(data = dataset.3, aes(x = factor(1),fill=factor(language))) +
 ## Delete variables of visualization 3
 rm(DT.repos)
 rm(DT.users)
-rm(companies.count)
-rm(dataset.3)
-rm(users.new)
-rm(top.10.companies)
+rm(companies)
+rm(languages)
+rm(companies.languages)
 
-## Visualization 4 :- Spatial visualization of github users
+## Visualization 4 :- Spatial visualization of top languages users population
 ## Starts Here
 
+# subsetting repos.df
+DT.repos <- select(repos.df, owner.id, owner.login, language ) %>%
+  filter( !(language %in% language.vague.values) ) %>%
+  na.omit() %>%
+  rename( id = owner.id, login = owner.login ) %>%
+  mutate(id = as.character(id) )
 
-DT.users <- select(users.df, id, login, location, latitude, longitude) %>%
+# subsetting repos.df
+DT.users <- select(users.df, id, login, company, latitude, longitude, location) %>%
+  filter( !(company %in% companies.vague.values) ) %>%
   mutate( latitude = as.numeric(latitude),
           longitude = as.numeric(longitude)
-  ) %>%
+  )  %>%
   na.omit()
+
+# create dataset by merging
+repos.users.merged <- merge(DT.repos, DT.users, by=c("id", "login"))
+
+users.spatial.pop <- select(repos.users.merged, latitude, longitude, language)
+
+
+# DBSCAN Clustering
+DBSCAN <- dbscan(select(users.spatial.pop, latitude,longitude), 
+                 eps=0.7, MinPts = 3)
+
+users.spatial.pop <- mutate(users.spatial.pop, cluster = DBSCAN$cluster) %>%
+  group_by(language, cluster) %>%
+  summarise(population = n(),
+            latitude = mean(latitude),
+            longitude = mean(longitude)
+  ) %>%
+  ungroup() %>%
+  arrange(desc(population))
+
+rules.df = data.table( language = languages.top, 
+                       colour = c("darkred", "red", "darkblue", 
+                                  "lightseagreen", "green", 
+                                  "lightblue", "purple", "orange","darkgreen" ) 
+                      )
+
+# add colour labels and radius labels
+
+
+# plot world map using leaflet
+m = leaflet() %>% addTiles() %>% 
+  addCircles(users.spatial.pop$longitude, users.spatial.pop$latitude, 
+             color = "blue", 
+             radius = 100000 
+  )
+
+# print plot
+print(m)
+
+## Ends Here
+
+
+## Delete variables of visualization 3
+rm(rules.df)
+rm(users.spatial.pop)
+rm(DBSCAN)
+rm(repos.users.merged)
+
+## Visualization 5 :- Spatial visualization of github users
+## Starts Here
 
 users.spatial.pop <- DT.users %>%
   group_by(longitude, latitude, location) %>%
@@ -192,8 +267,6 @@ DBSCAN <- dbscan(select(users.spatial.pop, latitude,longitude),
                  eps=0.7, MinPts = 3)
 
 users.spatial.pop <- mutate(users.spatial.pop, cluster = DBSCAN$cluster)
-
-filter(users.spatial.pop, cluster==10)
 
 non.outliners <- filter(users.spatial.pop, cluster != 0) %>% 
   group_by(cluster) %>%
@@ -236,7 +309,7 @@ for(bk in rev(col.df$breaks)){
 # plot world map using leaflet
 m = leaflet() %>% addTiles()
 m %>% addCircles(users.spatial.pop$longitude, users.spatial.pop$latitude, 
-                 color = users.spatial.pop$color, 
+                 color = "users.spatial.pop$color", 
                  radius = users.spatial.pop$radius 
 )
 
