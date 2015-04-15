@@ -10,3 +10,5 @@ repos_dump_in_json_*.json
 *.csv
 map/
 .gitignore~
+.ipynb_checkpoints
+
