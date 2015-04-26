@@ -1,7 +1,7 @@
 Dataset
 .Rhistory
 *.pyc
-.RData
+*.RData
 user_locations_exported_coordinates.json
 user_locations_import_coordinates.json
 users_dump_in_json.json
