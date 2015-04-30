@@ -1,6 +1,7 @@
 # Load all required R packages
 library(dplyr)
 library(ggplot2)
+library(scales)
 library(grid)
 library(data.table)
 library(leaflet)
@@ -8,25 +9,20 @@ library(fpc)
 
 # read repos and users csv files
 repos.dt <- fread('final_repos.csv', header = T,sep = ',', 
-                 stringsAsFactors = FALSE, nrows = 50000)
+                 stringsAsFactors = FALSE)
 users.dt <- fread('final_users.csv', header = T,sep = ',', 
-                 stringsAsFactors = FALSE, nrows = 20000)
+                 stringsAsFactors = FALSE)
 
 # meaningless values
 vague.values <- c(""," ", "-","none", "none.", "n/a", "na")
 companies.vague.values <- c(vague.values, "self","student", "home")
 language.vague.values <- c(vague.values, "Done")
-freelancers <- c("freelance", "freelancer")
-
-# replace freelance with freelancers as company in users.df
-users.dt[tolower(company) %in% freelancers]$company <- "Freelancers"
 
 ## Visualization 1 :- Programming languages trends in last few years
 ## Starts Here
 
 # find the top 10 languages
-languages <- repos.dt[!(language %in% vague.values ), .N, by=language] %>%
-  setorder(-N)
+languages <- repos.dt[, .N, by=language] %>% setorder(-N)
 
 languages.top <- languages$language[1:10]
 
@@ -70,8 +66,7 @@ rm(repos.yearwise)
 
 ## Visualization 2 :- Statistics of users from various Companies on Github
 ## Starts Here
-companies <- na.omit(users.dt[!(tolower(company) %in% companies.vague.values),
-                      .N, by=company] %>% setorder(-N))
+companies <- na.omit(users.dt[,.N, by=company] %>% setorder(-N))
   
 companies.top <- companies[1:25,company]
 
@@ -121,7 +116,7 @@ setnames(DT.repos, "owner.id", "id")
 setnames(DT.repos, "owner.login", "login")
 
 # change the class of id column to character
-#DT.repos$id <- as.character(DT.repos$id)
+DT.repos$id <- as.character(DT.repos$id)
 
 # subsetting users.df
 DT.users <- na.omit(users.dt[!(company %in% companies.vague.values), 
@@ -140,20 +135,42 @@ languages <- setorder(repos.users.merged[,.N, by=language], -N)
 
 languages.top <- languages$language[1:9]
 
-## fill others in non-top language
-repos.users.merged[!(language %in% languages.top)] <- "Others"
+# fill others in non-top language
+repos.users.merged[!(language %in% languages.top)]$language <- "Others"
 
 # filter top 12 companies data from dataset
 companies.languages = repos.users.merged[company %in% companies.top, ]
 
-# pie chart without labels
-ggplot(data = companies.languages, aes(x = factor(1),fill=factor(language))) +
-  facet_wrap(~company) +
-  geom_bar(width = 1,position = "fill") +
-  coord_polar(theta="y", start=0) +
-  xlab("Companies") +
-  ylab("No. of Repos")
+# add labels columns
+companies.languages <- companies.languages[, .(reposCnt = .N), by = .(company,  language)]
+companies.languages[, percentage := reposCnt/sum(reposCnt)*100, by = company ]
+companies.languages[, pos := cumsum(percentage) - percentage*0.5, by = company]
 
+blank_theme <- theme_minimal()+
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_blank(),
+    panel.grid=element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.y=element_blank(),
+    plot.title=element_text(size=rel(2), face="bold")
+  )
+
+# pie chart without labels
+ggplot(data = companies.languages)+
+  geom_bar(aes(x = factor(1), y = percentage, fill=factor(language )),
+           stat="identity", color='black') +
+  guides(fill=guide_legend(override.aes=list(colour=NA))) + 
+  geom_text(aes(x= factor(1), y=pos, label = sprintf("%1.f%%", percentage)), size=4) +
+  coord_polar(theta="y", start=0) +
+  facet_wrap(~company) +
+  scale_fill_brewer(palette="Set1",breaks = c(languages.top, "Others"), 
+                    labels = c(languages.top, "Others")) +
+  blank_theme +
+  theme(axis.text.x=element_blank()) + 
+  labs( title = "Comaprison of Companies with Programming Languages",
+        fill= "Languages")
 ## Ends Here
 
 ## Delete variables of visualization 3
