@@ -1,6 +1,7 @@
 # Load all required R packages
 library(dplyr)
 library(ggplot2)
+library(colorspace)
 library(scales)
 library(grid)
 library(data.table)
@@ -66,23 +67,22 @@ rm(repos.yearwise)
 
 ## Visualization 2 :- Statistics of users from various Companies on Github
 ## Starts Here
-companies <- na.omit(users.dt[,.N, by=company] %>% setorder(-N))
-companies[company %in% c("Japan", "japan", "NA"),] <- NA
+companies <- na.omit(users.dt[,.(usersCnt = .N), by=company] %>% setorder(-usersCnt))
+companies[company %in% c("Japan"),] <- NA
 companies <- na.omit(companies)
-companies.top <- companies[1:30,company]
-
-users.companies <- users.dt[company %in% companies.top]
+companies.top <- companies[1:30,]
 
 # barplot
-v2 = ggplot(data = users.companies, aes(x=reorder(company,company,
-                                                  function(x){-length(x)} ) )
-) +
-  geom_histogram(aes(fill=company)) +
+v2 = ggplot(data = companies.top) +
+  geom_bar(aes(x=company,y = usersCnt,fill=company), stat = "identity") +
   labs(title = "Histogram of Users in Top Companies",
        x = "Companies",
        y = "Number of Users"
-  ) + 
-  scale_fill_discrete(guide = FALSE) +
+  ) +
+  scale_x_discrete(limits = companies.top$company) +
+  geom_text(data=companies.top, aes(x = company, y = usersCnt, label=usersCnt), 
+            size = 4, vjust=-1) +
+  scale_fill_manual(values=rainbow_hcl(30, start = 30, end = 300), guide = FALSE)+
   theme(plot.title = element_text(size = rel(1.5), face = "bold", vjust = 1),
         axis.text = element_text(size = rel(1), colour = "black"),
         axis.text.x = element_text(face = "bold", angle = 60, hjust=1),
@@ -116,9 +116,6 @@ DT.repos <- na.omit(repos.dt[!(language %in% language.vague.values),
 setnames(DT.repos, "owner.id", "id")
 setnames(DT.repos, "owner.login", "login")
 
-# change the class of id column to character
-DT.repos$id <- as.character(DT.repos$id)
-
 # subsetting users.df
 DT.users <- na.omit(users.dt[!(company %in% companies.vague.values), 
                      .(id, login, company)])
@@ -132,9 +129,7 @@ companies <- setorder(repos.users.merged[,.N, by=company], -N)
 companies.top <- companies$company[1:12]
 
 # find top languages
-languages <- setorder(repos.users.merged[,.N, by=language], -N)
-
-languages.top <- languages$language[1:9]
+languages.top <- c("JavaScript", "Ruby", "Python", "PHP", "Java", "C", "Shell")
 
 # fill others in non-top language
 repos.users.merged[!(language %in% languages.top)]$language <- "Others"
@@ -147,31 +142,43 @@ companies.languages <- companies.languages[, .(reposCnt = .N), by = .(company,  
 companies.languages[, percentage := reposCnt/sum(reposCnt)*100, by = company ]
 companies.languages[, pos := cumsum(percentage) - percentage*0.5, by = company]
 
-blank_theme <- theme_minimal()+
-  theme(
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank(),
-    panel.border = element_blank(),
-    panel.grid=element_blank(),
-    axis.ticks = element_blank(),
-    axis.text.y=element_blank(),
-    plot.title=element_text(size=rel(2), face="bold")
-  )
+colours = c("#DB9D85", "#86B875", "#4CB9CC", "#CD99D8","#1B9E77", 
+            "#D95F02", "#66A61E","#666666")
 
 # pie chart without labels
-ggplot(data = companies.languages)+
-  geom_bar(aes(x = factor(1), y = percentage, fill=factor(language )),
-           stat="identity", color='black') +
-  guides(fill=guide_legend(override.aes=list(colour=NA))) + 
+v3 = ggplot(data = companies.languages, aes(x=factor(1), y=percentage, 
+                                            fill=factor(language ))) +
+  geom_bar(stat="identity") +
+  geom_bar(stat="identity", color='black', show_guide=FALSE) +
   geom_text(aes(x= factor(1), y=pos, label = sprintf("%1.f%%", percentage)), size=4) +
   coord_polar(theta="y", start=0) +
   facet_wrap(~company) +
-  scale_fill_brewer(palette="Set1",breaks = c(languages.top, "Others"), 
+  scale_fill_manual(values = colours,
+                    name = "Languages",
+                    breaks = c(languages.top, "Others"), 
                     labels = c(languages.top, "Others")) +
-  blank_theme +
-  theme(axis.text.x=element_blank()) + 
-  labs( title = "Comaprison of Companies with Programming Languages",
-        fill= "Languages")
+  theme(axis.text.x = element_blank(),
+        plot.title = element_text(size=rel(2), face="bold"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        strip.text.x = element_text(size=rel(1.5), face="bold"),
+        legend.title = element_text(size=rel(1.5), face="bold"),
+        legend.text = element_text(size=rel(1), face="bold"),
+        legend.margin = unit(3,"cm"),
+        legend.key.width = unit(1,"cm"),
+        legend.key.height = unit(1,"cm"),
+        legend.background = element_rect(fill="gray90", size=1, linetype="dotted")
+  ) + 
+  labs( title = "Comparison of Companies with Programming Languages")
+
+# print plot
+print(v3)
+
 ## Ends Here
 
 ## Delete variables of visualization 3
