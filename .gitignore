@@ -11,4 +11,5 @@ repos_dump_in_json_*.json
 map/
 .gitignore~
 .ipynb_checkpoints
+Plots/*
 

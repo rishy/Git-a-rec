@@ -38,7 +38,7 @@ v1 = ggplot(data = repos.yearwise, aes(x=year, y=N)) +
        x = "Year",
        y = "Number of Repos",
        colour = "Languages"
-  ) + 
+  ) + xlim(2011, 2014) + 
   scale_color_discrete(breaks = languages.top, labels = languages.top) +
   theme(plot.title = element_text(size = rel(1.5), face = "bold", vjust = 1),
         axis.text = element_text(size = rel(1), colour = "black"),
@@ -247,7 +247,7 @@ users.spatial.pop <- DT.users[, .(population = .N),
   na.omit()
 
 # DBSCAN Clustering
-DBSCAN <- dbscan(select(users.spatial.pop, latitude,longitude), 
+DBSCAN <- dbscan(users.spatial.pop[, .(latitude, longitude)], 
                  eps=0.7, MinPts = 3)
 
 # Add a new cluster column
