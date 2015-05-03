@@ -67,10 +67,11 @@ rm(repos.yearwise)
 ## Visualization 2 :- Statistics of users from various Companies on Github
 ## Starts Here
 companies <- na.omit(users.dt[,.N, by=company] %>% setorder(-N))
-  
-companies.top <- companies[1:25,company]
+companies[company %in% c("Japan", "japan", "NA"),] <- NA
+companies <- na.omit(companies)
+companies.top <- companies[1:30,company]
 
-users.companies <- users.dt[company %in% companies.top,]
+users.companies <- users.dt[company %in% companies.top]
 
 # barplot
 v2 = ggplot(data = users.companies, aes(x=reorder(company,company,
