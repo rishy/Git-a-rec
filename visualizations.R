@@ -203,38 +203,38 @@ DT.users <- na.omit(DT.users)
 # create dataset by merging
 repos.users.merged <- merge(DT.repos, DT.users, by=c("id", "login"))
 
-# Merge users and repos columns with languages and coordinates
-users.spatial.pop <- repos.users.merged[, .(latitude, longitude, language)]
+languages <- setorder(repos.users.merged[,.N, by=language], -N)
 
-# DBSCAN Clustering
-DBSCAN <- dbscan(users.spatial.pop[, .(latitude,longitude)], 
-                 eps=0.7, MinPts = 3)
+for(i in 1:5){
+  # Merge users and repos columns with languages and coordinates
+  users.spatial.pop <- repos.users.merged[language == languages[i]$language,
+                                          .(latitude, longitude, language)]
+  
+  # Group By users.spatial.pop by language
+  users.spatial.pop <- setorder(users.spatial.pop[, .(population = .N),
+                                by = .(latitude, longitude)],
+                                -population)
+  
+  # add colour labels and radius labels
+  maxSize = max(users.spatial.pop$population)
+  col.df = data.frame( breaks = rev(c(10, 50, maxSize/32, maxSize/16, maxSize/8,
+                                      maxSize/4, maxSize/2, maxSize)),
+                                color = c("darkred", "red", "orange", "purple",
+                                          "green", "darkblue", "seagreen", "blue"))
+  
+  for(i in 1:8){    
+    users.spatial.pop[population <= col.df$breaks[i], "color"] <- col.df$color[i]    
+  }
+  
+  # plot world map using leaflet
+  m = leaflet() %>% addTiles() %>% addCircles(users.spatial.pop$longitude,
+                                              users.spatial.pop$latitude,
+                                              color = users.spatial.pop$color,
+                                              radius = 10000)  
+  # print plot
+  print(m)
+}
 
-# Add a "cluster" column to users.spatial.pop
-users.spatial.pop <- users.spatial.pop[, cluster:=DBSCAN$cluster]
-
-# Group By users.spatial.pop by language and cluster
-users.spatial.pop <- setorder(users.spatial.pop[, .(population= .N,
-  latitude= mean(latitude), longitude= mean(longitude)),
-  by = .(language, cluster)], -population)
-
-rules.df = data.table(language = languages.top, 
-                       colour = c("darkred", "red", "darkblue", 
-                                  "lightseagreen", "green", 
-                                  "lightblue", "purple", "orange","darkgreen"))
-
-# add colour labels and radius labels
-
-
-# plot world map using leaflet
-m = leaflet() %>% addTiles() %>% 
-  addCircles(users.spatial.pop$longitude, users.spatial.pop$latitude, 
-             color = "blue", 
-             radius = 100000 
-  )
-
-# print plot
-print(m)
 
 ## Ends Here
 
@@ -253,54 +253,22 @@ users.spatial.pop <- DT.users[, .(population = .N),
   setorder(-population) %>%
   na.omit()
 
-# DBSCAN Clustering
-DBSCAN <- dbscan(users.spatial.pop[, .(latitude, longitude)], 
-                 eps=0.7, MinPts = 3)
-
-# Add a new cluster column
-users.spatial.pop <- users.spatial.pop[, cluster := DBSCAN$cluster]
-
-# Find non-outliers by grouping by cluster
-non.outliers <- users.spatial.pop[cluster != 0,
-  .(population = sum(population), latitude = mean(latitude),
-  longitude = mean(longitude)), by = cluster] %>%
-  setorder(-population)
-
-outliers <- users.spatial.pop[cluster == 0,
-  .(cluster, population, latitude, longitude)] %>%
-  setorder(-population)
-
-# rbind two data.tables using faster rbindlist method
-users.spatial.pop <- rbindlist(list(non.outliers, outliers))[, 
-  .(longitude, latitude, population)]
-
 # adding extra labels in dataset
 maxSize = max(users.spatial.pop$population)
-radius = (users.spatial.pop$population/maxSize)*100000
 
-col.df = data.frame( breaks = c(10, 50, 100, 500, 1000, 10000, 40000, maxSize), 
-                     color = c("darkblue", "lightseagreen", "green", 
-                               "lightblue", "purple", "orange", "red","darkred"),
-                     radius = c(50, 500, 1000, 5000, 15000, 50000, 150000, 300000)
-)
+col.df = data.frame( breaks = rev(c(10, 50, maxSize/32, maxSize/16, maxSize/8,
+                                maxSize/4, maxSize/2, maxSize)),
+                                color = c("darkred", "red", "orange", "purple",
+                               "green", "darkblue", "seagreen", "blue"))
 
-users.spatial.pop$color = rep("red", length(users.spatial.pop$population))
-users.spatial.pop$radius = rep(0, length(users.spatial.pop$population))
-
-for(bk in rev(col.df$breaks)){
-  
-  users.spatial.pop[users.spatial.pop$population <= bk,]$color <- 
-    col.df[match(c(bk), col.df$breaks), c('color')]
-  
-  users.spatial.pop[users.spatial.pop$population <= bk,]$radius <- 
-    col.df[match(c(bk), col.df$breaks), c('radius')]
+for(i in 1:8){    
+  users.spatial.pop[population <= col.df$breaks[i], "color"] <- col.df$color[i]    
 }
 
 # plot world map using leaflet
 m = leaflet() %>% addTiles()
 m %>% addCircles(users.spatial.pop$longitude, users.spatial.pop$latitude, 
-                 color = users.spatial.pop$color, 
-                 radius = users.spatial.pop$radius 
+                 color = users.spatial.pop$color, radius = 10000 
 )
 
 ## Ends Here
