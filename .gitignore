@@ -1,3 +1,9 @@
+.DS_Store
+*~
+*.pyc
+.sass-cache
+
+# user defined
 Dataset
 .Rhistory
 *.pyc
