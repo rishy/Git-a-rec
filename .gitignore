@@ -4,6 +4,7 @@
 .sass-cache
 
 # user defined
+data/
 Dataset
 .Rhistory
 *.pyc
