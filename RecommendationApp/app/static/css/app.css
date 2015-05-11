@@ -1,5 +1,112 @@
+/* Import Google Fonts*/
+@import url(http://fonts.googleapis.com/css?family=Slabo+27px);
+@import url(http://fonts.googleapis.com/css?family=Lato);
+
 body {
   margin-top: 60px;
   padding: 10px;
+  background-image: url("../images/background-02.png");
   background-color: #ECF0F1;
+  font-family: 'Lato', sans-serif;
+}
+
+::-webkit-input-placeholder {
+   text-align: center;
+}
+
+:-moz-placeholder { /* Firefox 18- */
+   text-align: center;
+}
+
+::-moz-placeholder {  /* Firefox 19+ */
+   text-align: center;
+}
+
+:-ms-input-placeholder {
+   text-align: center;
+}
+.navbar{
+    background-color: #1B9E77;
+    border-color: #136E53;
+}
+
+.navbar-nav > li > a{
+    color: #FFFFFF !important;
+    font-size: 20px;
+}
+.navbar-nav > li:hover, li:focus{
+    background-color: #136E53;
+}
+
+.navbar-inverse .navbar-toggle {
+    border-color: #136E53;
+}
+
+.navbar-inverse .navbar-collapse, .navbar-inverse .navbar-form {
+    border-color: #136E53;
+}
+
+.navbar-inverse .navbar-toggle:hover, .navbar-inverse .navbar-toggle:focus {
+    background-color: #136E53;
+}
+
+.navbar-brand{
+    color: #FFFFFF !important;
+    font-size: 25px;
+    font-style: bold;
+}
+
+#quote{
+    text-align: center;
+    padding: 15px 0px;
+}
+
+blockquote{
+    border-left: none;
+}
+
+#quote p{
+    /*color: #fff;*/
+    font-size: 35px;
+    font-weight: bold;
+    font-family: 'Slabo 27px', serif;
+}
+
+#username-form-div{
+    padding: 10px 0px;
+}​
+
+#input-form{
+    font-family: 'Slabo 27px', serif;
+}
+#username input, input[placeholder]{
+    height: 50px;
+    border: 1px solid #ddd;
+    /*font-weight:bold;*/
+    color: #136E53;
+    text-align:center;
+    font-size: 30px;
+    border-radius: 0px;
+    /*font-size: 16px;*/
+    -webkit-transition: all 0.1s linear;
+    -moz-transition: all 0.1s linear;
+    transition: all 0.1s linear;
+}
+
+.btn-submit {
+    background-color: #59B2E0;
+    outline: none;
+    color: #fff;
+    font-size: 20px;
+    height: auto;
+    font-weight: normal;
+    padding: 14px 0;
+    text-transform: uppercase;
+    border-color: #59B2E6;
+}
+.btn-submit:hover,
+.btn-submit:focus {
+    color: #fff;
+    background-color: #53A3CD;
+    border-color: #53A3CD;
 }

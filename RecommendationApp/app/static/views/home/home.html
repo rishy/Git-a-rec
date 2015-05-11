@@ -1,12 +1,26 @@
-<div class="container-fluid">
+<div class="container-fluid  vertical-center" id="main-page">
+    <div class="row" >
+        <div class="col-sm-8 col-sm-offset-2" id="quote">
+            <blockquote>
+                <p>&#8220;Keep Calm and Contribute to Open Source.&#8221;</p>
+                <p><small>Nobody</small>
+            </blockquote>
+        </div>
+    </div>
     <div class="row">
-        <div class="col-md-8">
-            <h1>Welcome to RecommendationApp!</h1>
-            <p class="lead">This is your homepage, ready for editing</p>
-
-            <p>
-             <span translate="main.like">If you like this Angular-Flask generator, please give us a star at </span>&nbsp;<a href="https://github.com/rayokota/generator-angular-flask" target="_blank" translate="main.github">Github</a>!
-            </p>
+        <div class="col-sm-6 col-sm-offset-3" id="username-form-div">
+                <form id="input-form" action="#" method="post" role="form" style="display: block;">
+                        <div class="form-group">
+                            <input type="text" name="username" id="username" tabindex="1" class="form-control" placeholder="Github Username" value="">
+                        </div>
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-sm-4 col-sm-offset-4">
+                                    <input type="submit" name="submit" id="submit" tabindex="4" class="form-control btn btn-submit" value="Submit">
+                                </div>
+                            </div>
+                        </div>
+                </form>
         </div>
     </div>
 </div>
