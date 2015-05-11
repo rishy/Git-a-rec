@@ -1,0 +1,11 @@
+.DS_Store
+*.db
+*.pyc
+*.swp
+*~
+db_repository
+flask
+node_modules
+
+# virtual environment
+venv/
