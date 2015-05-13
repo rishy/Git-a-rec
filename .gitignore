@@ -21,4 +21,5 @@ map/
 .ipynb_checkpoints
 Plots/*
 i965_dri.so
-
+ipython-scripts/
+output
