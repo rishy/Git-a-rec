@@ -19,5 +19,5 @@ map/
 .gitignore~
 .ipynb_checkpoints
 Plots/*
-*.ipynb
+i965_dri.so
 
