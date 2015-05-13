@@ -5,7 +5,7 @@
 body {
   margin-top: 60px;
   padding: 10px;
-  background-image: url("../images/background-02.png");
+  background-image: url("../images/background-01.png");
   background-color: #ECF0F1;
   font-family: 'Lato', sans-serif;
 }
@@ -66,7 +66,7 @@ blockquote{
 }
 
 #quote p{
-    /*color: #fff;*/
+    color: #fff;
     font-size: 35px;
     font-weight: bold;
     font-family: 'Slabo 27px', serif;
