@@ -5,6 +5,7 @@
 *~
 
 # user defined
+ec2/
 data/
 Dataset
 .Rhistory
@@ -23,3 +24,4 @@ Plots/*
 i965_dri.so
 ipython-scripts/
 output
+*.log

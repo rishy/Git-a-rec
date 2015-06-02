@@ -1,3 +1,4 @@
+invoke
 flask
 flask-login
 flask-openid
@@ -10,3 +11,4 @@ flask-wtf
 pytz
 flask-babel
 flup
+GitHub-Flask

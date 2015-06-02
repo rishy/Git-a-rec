@@ -7,6 +7,7 @@ pip install virtualenv
 virtualenv venv
 
 # install all required python packages
+venv/bin/pip install invoke
 venv/bin/pip install flask
 venv/bin/pip install flask-login
 venv/bin/pip install flask-openid
@@ -19,3 +20,4 @@ venv/bin/pip install flask-wtf
 venv/bin/pip install pytz
 venv/bin/pip install flask-babel
 venv/bin/pip install flup
+venv/bin/pip install Github-Flask
