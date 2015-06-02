@@ -1,0 +1,66 @@
+# References
+
+### Data Analysis
+1. http://ggplot2.org/
+2. http://docs.ggplot2.org/current/
+3. https://en.wikipedia.org/wiki/R_(programming_language)
+4. http://www.revolutionanalytics.com/what-r
+5. http://www.inside-r.org/what-is-r
+6. https://www.stat.auckland.ac.nz/~ihaka/downloads/R-paper.pdf
+7. http://cran.rstudio.com/web/packages/dplyr/vignettes/introduction.html
+8. http://datatable.r-forge.r-project.org/datatable-intro.pdf
+9. http://cran.r-project.org/web/packages/data.table/index.html
+10. http://blog.datacamp.com/data-table-cheat-sheet/
+11. http://stackoverflow.com/questions/1727772/quickly-reading-very-large-tables-as-dataframes-in-r
+12. https://rstudio.github.io/leaflet/
+13. http://api.mongodb.org/python/current/
+14. https://api.mongodb.org/python/current/tutorial.html
+15. https://www.mongodb.org/
+16. https://geopy.readthedocs.org/en/1.10.0/
+17. https://pypi.python.org/pypi/geopy
+18. https://en.wikipedia.org/wiki/NoSQL
+19. http://www.mongodb.com/nosql-explained
+20. http://nosql-database.org/
+
+### Recommender System
+1. https://en.wikipedia.org/wiki/Recommender_system
+2. http://www.fxpal.com/publications/FXPAL-PR-06-383.pdf
+3. http://recommender-systems.org/content-based-filtering/
+4. http://facweb.cs.depaul.edu/mobasher/classes/ect584/Papers/ContentBasedRS.pdf
+5. http://stackoverflow.com/questions/4547387/approaches-for-content-based-item-recommendations
+6. http://ceur-ws.org/Vol-532/paper2.pdf
+7. https://www.ischool.utexas.edu/~i385q/readings/Balabanovic_Shoham-1997-Fab.pdf
+8. https://blog.twitter.com/2014/all-pairs-similarity-via-dimsum
+9. http://stanford.edu/~rezab/papers/dimsum.pdf
+10. https://gigaom.com/2014/09/24/twitter-open-sourced-a-recommendation-algorithm-for-massive-datasets/
+11. http://files.grouplens.org/papers/FnT%20CF%20Recsys%20Survey.pdf
+12. http://recommender-systems.org/collaborative-filtering/
+13. https://spark.apache.org/
+14. https://spark.apache.org/docs/latest/mllib-collaborative-filtering.html
+15. https://spark.apache.org/docs/latest/spark-standalone.html
+16. https://spark.apache.org/docs/latest/ec2-scripts.html
+17. https://hadoop.apache.org/
+18. http://www.cloudera.com/content/cloudera/en/about/hadoop-and-big-data.html
+19. https://en.wikipedia.org/wiki/Apache_Hadoop
+20. http://www.cs.umd.edu/~samir/498/Amazon-Recommendations.pdf
+21. http://link.springer.com/chapter/10.1007%2F978-3-540-72079-9_9
+22. http://rs1.sze.hu/~gtakacs/download/jmlr_2009.pdf
+23. http://www.grappa.univ-lille3.fr/~mary/cours/stats/centrale/reco/paper/MatrixFactorizationALS.pdf
+24. http://www.cloudera.com/content/cloudera/en/documentation/cdh5/v5-0-0/CDH5-Installation-Guide/CDH5-Installation-Guide.html
+25. https://en.wikipedia.org/wiki/MapReduce
+26. http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html
+27. http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/hdfs-and-mapreduce.html
+28. http://static.googleusercontent.com/media/research.google.com/en//archive/mapreduce-osdi04.pdf
+29. http://pandas.pydata.org/
+30. http://pandas.pydata.org/pandas-docs/stable/tutorials.html
+31. http://www.numpy.org/
+32. http://wiki.scipy.org/Tentative_NumPy_Tutorial
+33. http://www.scipy.org/
+34. http://docs.scipy.org/doc/scipy/reference/
+35. http://ipython.org/
+36. http://ipython.org/ipython-doc/stable/index.html
+37. http://www.scala-lang.org/
+38. https://spark.apache.org/docs/latest/api/scala/
+39. https://www.python.org/
+40. https://docs.python.org/2/tutorial/
+
